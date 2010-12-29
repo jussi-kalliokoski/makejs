@@ -1,6 +1,7 @@
 function all()
 {
 	echo('pro');
+	save('pro.js', 'cockoo');
 	compile();
 }
 

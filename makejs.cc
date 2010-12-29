@@ -6,6 +6,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <iostream>
+#include <fstream>
 
 
 void RunShell(v8::Handle<v8::Context> context);
@@ -15,11 +17,13 @@ bool ExecuteString(v8::Handle<v8::String> source,
                    bool report_exceptions);
 v8::Handle<v8::Value> Print(const v8::Arguments& args);
 v8::Handle<v8::Value> Read(const v8::Arguments& args);
+v8::Handle<v8::Value> Save(const v8::Arguments& args);
 v8::Handle<v8::Value> Load(const v8::Arguments& args);
 v8::Handle<v8::Value> Quit(const v8::Arguments& args);
 v8::Handle<v8::Value> Version(const v8::Arguments& args);
 v8::Handle<v8::Value> ShellEx(const v8::Arguments& args);
 v8::Handle<v8::String> ReadFile(const char* name);
+v8::Handle<v8::String> SaveFile(const char* name, const char* content);
 void ReportException(v8::TryCatch* handler);
 
 
@@ -29,6 +33,7 @@ int RunMain(int argc, char* argv[]) {
   v8::Handle<v8::ObjectTemplate> global = v8::ObjectTemplate::New();
   global->Set(v8::String::New("echo"), v8::FunctionTemplate::New(Print));
   global->Set(v8::String::New("open"), v8::FunctionTemplate::New(Read));
+  global->Set(v8::String::New("save"), v8::FunctionTemplate::New(Save));
   global->Set(v8::String::New("import"), v8::FunctionTemplate::New(Load));
   global->Set(v8::String::New("exit"), v8::FunctionTemplate::New(Quit));
   global->Set(v8::String::New("version"), v8::FunctionTemplate::New(Version));
@@ -106,6 +111,19 @@ v8::Handle<v8::Value> Read(const v8::Arguments& args) {
   return source;
 }
 
+v8::Handle<v8::Value> Save(const v8::Arguments& args) {
+  if (args.Length() != 2) {
+    return v8::ThrowException(v8::String::New("Bad parameters"));
+  }
+  v8::String::Utf8Value file(args[0]);
+  v8::String::Utf8Value content(args[1]);
+  if (*file == NULL || *content == NULL) {
+    return v8::ThrowException(v8::String::New("Error loading file"));
+  }
+  v8::Handle<v8::String> source = SaveFile(*file, *content);
+  return source;
+}
+
 v8::Handle<v8::Value> ShellEx(const v8::Arguments& args) {
   if (args.Length() != 1) {
     return v8::ThrowException(v8::String::New("Bad parameters"));
@@ -161,6 +179,15 @@ v8::Handle<v8::Value> Version(const v8::Arguments& args) {
 
 
 // Reads a file into a v8 string.
+v8::Handle<v8::String> SaveFile(const char* name, const char* content) {
+  std::ofstream fileOut;
+  fileOut.open(name);
+  fileOut << content;
+  fileOut.close();
+  v8::Handle<v8::String> result = v8::String::New("0");
+  return result;
+}
+
 v8::Handle<v8::String> ReadFile(const char* name) {
   FILE* file = fopen(name, "rb");
   if (file == NULL) return v8::Handle<v8::String>();
