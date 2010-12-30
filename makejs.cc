@@ -15,10 +15,12 @@ bool ExecuteString(v8::Handle<v8::String> source,
                    v8::Handle<v8::Value> name,
                    bool print_result,
                    bool report_exceptions);
+bool ExecuteChar(const char *code, const char *name);
 v8::Handle<v8::Value> Print(const v8::Arguments& args);
 v8::Handle<v8::Value> Read(const v8::Arguments& args);
 v8::Handle<v8::Value> Save(const v8::Arguments& args);
 v8::Handle<v8::Value> Load(const v8::Arguments& args);
+bool importFile(const char *file, const char *name);
 v8::Handle<v8::Value> Quit(const v8::Arguments& args);
 v8::Handle<v8::Value> Version(const v8::Arguments& args);
 v8::Handle<v8::Value> ShellEx(const v8::Arguments& args);
@@ -40,11 +42,14 @@ int RunMain(int argc, char* argv[]) {
   global->Set(v8::String::New("shell"), v8::FunctionTemplate::New(ShellEx));
   v8::Handle<v8::Context> context = v8::Context::New(NULL, global);
   v8::Context::Scope context_scope(context);
-  v8::Handle<v8::String> startexec = v8::String::New("import('makefile.js')");
-  v8::Handle<v8::String> startexname = v8::String::New("init");
-  ExecuteString(startexec, startexname, false, true);
+  ExecuteChar("var all, onfinish;", "init");
+  if(!importFile("makefile.js", "init"))
+  {
+    printf("makejs: *** Couldn't execute makefile.js. Stop.\n");
+    return 1;
+  }
   if (argc < 2)
-    ExecuteString(v8::String::New("all()"), v8::String::New("init"), false, true);
+    ExecuteChar("if (all && all.constructor === Function) all(); else echo('makejs: *** function all not found in makefile.js!\\\n')", "init");
   for (int i = 1; i < argc; i++) {
     const char* str = argv[i];
     /*if (strcmp(str, "-") == 1) {
@@ -59,18 +64,27 @@ int RunMain(int argc, char* argv[]) {
       argu = new char[32];
       sprintf(argu, "%s();", str);
       v8::Handle<v8::String> source = v8::String::New(argu);
-      if (!ExecuteString(source, file_name, false, true))
-        return 1;
+      ExecuteString(source, file_name, false, true);
     }
   }
+  ExecuteChar("if (onfinish && onfinish.constructor === Function) onfinish();", "finish");
   return 0;
 }
+
 
 
 int main(int argc, char* argv[]) {
   RunMain(argc, argv);
   v8::V8::Dispose();
   return 0;
+}
+
+bool ExecuteChar(const char *code, const char *name)
+{
+  v8::HandleScope handle_scope;
+  v8::Handle<v8::String> vcode = v8::String::New(code);
+  v8::Handle<v8::String> vname = v8::String::New(name);
+  ExecuteString(vcode, vname, false, true);
 }
 
 
@@ -159,6 +173,19 @@ v8::Handle<v8::Value> Load(const v8::Arguments& args) {
     }
   }
   return v8::Undefined();
+}
+
+bool importFile(const char *file, const char *name)
+{
+  v8::HandleScope handle_scope;
+  v8::Handle<v8::String> source = ReadFile(file);
+  if (source.IsEmpty()) {
+    return false;
+  }
+  if (!ExecuteString(source, v8::String::New(name), true, false)){
+    return false;
+  }
+  return true;
 }
 
 
