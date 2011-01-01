@@ -166,7 +166,13 @@ v8::Handle<v8::Value> Load(const v8::Arguments& args) {
     }
     v8::Handle<v8::String> source = ReadFile(*file);
     if (source.IsEmpty()) {
-      return v8::ThrowException(v8::String::New("Error loading file"));
+      char *libfile;
+      libfile = new char[32];
+      sprintf(libfile, "/usr/share/makejs/%s", *file);
+      source = ReadFile(libfile);
+      if (source.IsEmpty()) {
+        return v8::ThrowException(v8::String::New("Error loading file"));
+      }
     }
     if (!ExecuteString(source, v8::String::New(*file), false, false)) {
       return v8::ThrowException(v8::String::New("Error executing file"));

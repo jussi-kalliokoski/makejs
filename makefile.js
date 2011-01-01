@@ -1,3 +1,5 @@
+import('conditional.js');
+
 function all()
 {
 	echo('pro');

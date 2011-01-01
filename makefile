@@ -1,13 +1,20 @@
+LIBDIR = /usr/share
+BINDIR = /usr/bin
+
 all: compile
 
 compile:
 	g++ -o bin/makejs makejs.cc -lv8
 
 install:
-	cp bin/makejs /usr/bin/
+	cp bin/makejs $(BINDIR)/
+	mkdir $(LIBDIR)/makejs -p
+	cp lib/* $(LIBDIR)/makejs/ -f
 
 uninstall:
-	rm /usr/bin/makejs
+	rm $(BINDIR)/makejs -f
+	rm $(LIBDIR)/makejs/* -f
+	rmdir $(LIBDIR)/makejs
 
 clean:
 	rm bin/makejs
