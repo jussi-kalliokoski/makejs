@@ -22,6 +22,7 @@
 	return v8::ThrowException(v8::String::New(message))
 
 
+int RunMain(int argc, char* argv[]);
 bool ExecuteChar(const char *code, const char *name);
 bool importFile(const char *file, const char *name);
 void ReportException(v8::TryCatch* handler);
