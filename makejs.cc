@@ -39,6 +39,12 @@ DECLARE_FN(Load);
 DECLARE_FN(Quit);
 DECLARE_FN(ShellEx);
 
+int main(int argc, char* argv[]){
+	RunMain(argc, argv);
+	v8::V8::Dispose();
+	return 0;
+}
+
 int RunMain(int argc, char* argv[]){
 	v8::HandleScope handle_scope;
 	v8::Handle<v8::ObjectTemplate> global = v8::ObjectTemplate::New();
@@ -66,12 +72,6 @@ int RunMain(int argc, char* argv[]){
 		ExecuteChar(argu, "unnamed");
 	}
 	ExecuteChar("if (typeof onfinish === 'function') onfinish();", "finish");
-	return 0;*/
-}
-
-int main(int argc, char* argv[]){
-	RunMain(argc, argv);
-	v8::V8::Dispose();
 	return 0;
 }
 
