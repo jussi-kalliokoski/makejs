@@ -15,8 +15,12 @@
 			v8::FunctionTemplate::New(callback)->GetFunction())
 
 #define SET_VALUE(obj, name, value, type)					\
-	obj->Set(	v8::String::NewSymbol(name)				\
+	obj->Set(	v8::String::NewSymbol(name),				\
 			v8::type::New(value))
+
+#define SET_OBJ(obj, name, value)						\
+	obj->Set(	v8::String::NewSymbol(name),				\
+			value)
 
 #define DIE(message)								\
 	return v8::ThrowException(v8::String::New(message))
@@ -49,12 +53,12 @@ int main(int argc, char* argv[]){
 int RunMain(int argc, char* argv[]){
 	v8::HandleScope handle_scope;
 	v8::Handle<v8::ObjectTemplate> global = v8::ObjectTemplate::New();
-	SET_METHOD(global, "echo",	Print	);
-	SET_METHOD(global, "open",	Read	);
+//	SET_METHOD(global, "echo",	Print	);
+/*	SET_METHOD(global, "open",	Read	);
 	SET_METHOD(global, "save",	Save	);
 	SET_METHOD(global, "import",	Load	);
 	SET_METHOD(global, "exit",	Quit	);
-	SET_METHOD(global, "shell",	ShellEx	);
+	SET_METHOD(global, "shell",	ShellEx	);*/
 	v8::Handle<v8::Context> context = v8::Context::New(NULL, global);
 	v8::Context::Scope context_scope(context);
 	if (!importFile("makefile.js", "init")){
