@@ -4,6 +4,7 @@ BINDIR = /usr/bin
 all: compile
 
 compile:
+	mkdir bin -p
 	g++ -o bin/makejs makejs.cc -lv8
 
 install:
