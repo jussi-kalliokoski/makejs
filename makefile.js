@@ -1,9 +1,12 @@
-//import('conditional.js');
+import('conditional.js');
+
+//console.log(makejs.flags);
 
 function all()
 {
 	echo('pro');
-	echo(version());
+	console.log(makejs.argumentedFlags['-h']);
+	console.log(makejs.argumentedFlags['-h'].length);
 }
 
 function onfinish()

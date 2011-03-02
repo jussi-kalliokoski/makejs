@@ -91,6 +91,8 @@ int RunMain(int argc, char* argv[]){
 	SET_OBJ(makejsObj, "flags", flags);
 	v8::Handle<v8::Array> rawFlags = v8::Array::New();
 	SET_OBJ(makejsObj, "rawFlags", rawFlags);
+	v8::Handle<v8::Object> argumentedFlags = v8::Object::New();
+	SET_OBJ(makejsObj, "argumentedFlags", argumentedFlags);
 
 	bool specifyingRules = true;
 	int ruleCount = 0;
@@ -103,6 +105,13 @@ int RunMain(int argc, char* argv[]){
 		if (strncmp(str, "-", 1) == 0){
 			specifyingRules = false;
 			flags->Set(v8::Number::New(flagCount++), v8::String::New(str));
+			v8::Handle<v8::Array> argumentedFlag = v8::Array::New();
+			SET_OBJ(argumentedFlags, str, argumentedFlag);
+			int argCount = 0;
+			while (i+argCount<argc-1 && strncmp(argv[i+argCount+1], "-", 1) != 0){
+				argumentedFlag->Set(v8::Number::New(argCount++), v8::String::New(argv[i+argCount+1]));
+			}
+			i += argCount;
 		} else if (specifyingRules){
 			rules->Set(v8::Number::New(ruleCount++), v8::String::New(str));
 		}
@@ -210,7 +219,7 @@ v8::Handle<v8::Value> Load(const v8::Arguments& args){
 		v8::Handle<v8::String> source = ReadFile(*file);
 		if (source.IsEmpty()){
 			char *libfile = new char[32];
-			sprintf(libfile, "usr/share/makejs/%s", *file);
+			sprintf(libfile, "/usr/share/makejs/%s", *file);
 			source = ReadFile(libfile);
 		}
 		if (source.IsEmpty()){
