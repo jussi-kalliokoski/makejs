@@ -26,6 +26,13 @@
 	obj->Set(	v8::String::NewSymbol(name),				\
 			value)
 
+#define CALL_METHOD(obj, name, owner, argc, argv)				\
+	v8::Function::Cast(							\
+		*obj->Get(							\
+			v8::String::NewSymbol(name)))->Call(			\
+				owner, argc, argv				\
+	)								
+
 #define DIE(message)								\
 	return v8::ThrowException(v8::String::New(message))
 
@@ -57,30 +64,76 @@ int main(int argc, char* argv[]){
 int RunMain(int argc, char* argv[]){
 	v8::HandleScope handle_scope;
 	v8::Handle<v8::ObjectTemplate> global = v8::ObjectTemplate::New();
-	SET_FUNCTION(global, "echo",	Print	);
+
 	SET_FUNCTION(global, "open",	Read	);
 	SET_FUNCTION(global, "save",	Save	);
 	SET_FUNCTION(global, "import",	Load	);
 	SET_FUNCTION(global, "exit",	Quit	);
 	SET_FUNCTION(global, "shell",	ShellEx	);
+
 	v8::Handle<v8::Context> context = v8::Context::New(NULL, global);
 	v8::Context::Scope context_scope(context);
+	v8::Handle<v8::Object> globalObj = context->Global();
+
+	v8::Handle<v8::Function> logFunction = v8::FunctionTemplate::New(Print)->GetFunction();
+	SET_OBJ(globalObj, "echo", logFunction);
+	v8::Handle<v8::Object> consoleObj = v8::Object::New();
+	v8::Handle<v8::Object> makejsObj = v8::Object::New();
+	SET_OBJ(consoleObj, "log", logFunction);
+	SET_OBJ(globalObj, "console", consoleObj);
+	SET_OBJ(globalObj, "makejs", makejsObj);
+
+	v8::Handle<v8::Value>* flagsArguments;
+
+	v8::Handle<v8::Array> rules = v8::Array::New();
+	SET_OBJ(makejsObj, "rules", rules);
+	v8::Handle<v8::Array> flags = v8::Array::New();
+	SET_OBJ(makejsObj, "flags", flags);
+	v8::Handle<v8::Array> rawFlags = v8::Array::New();
+	SET_OBJ(makejsObj, "rawFlags", rawFlags);
+
+	bool specifyingRules = true;
+	int ruleCount = 0;
+	int flagCount = 0;
+
+	for (int i=1; i<argc; i++){ // TODO: Assign flags to javascript.
+		const char* str = argv[i];
+		v8::HandleScope handle_scope;
+		rawFlags->Set(v8::Number::New(i-1), v8::String::New(str));
+		if (strncmp(str, "-", 1) == 0){
+			specifyingRules = false;
+			flags->Set(v8::Number::New(flagCount++), v8::String::New(str));
+		} else if (specifyingRules){
+			rules->Set(v8::Number::New(ruleCount++), v8::String::New(str));
+		}
+	}
+	if (ruleCount == 0){
+		rules->Set(v8::Number::New(ruleCount++), v8::String::New("all"));
+	}
+	
+
 	if (!importFile("makefile.js", "init")){
 		printf("makejs: *** Couldn't execute makefile.js. Stop.\n");
 		return 1;
 	}
+
+	for (int i=0; i<ruleCount; i++){
+		v8::String::Utf8Value rule(rules->Get(v8::Number::New(i)));
+		if (globalObj->Get(v8::String::NewSymbol(*rule))->IsFunction()){
+			CALL_METHOD(globalObj, *rule, globalObj, 0, flagsArguments);
+		} else {
+			printf("makejs: *** Rule %s not specified in the makefile. Stop.\n", *rule);
+			return 1;
+		}
+	}
+
 	if (argc < 2){ // TODO: This doesn't need to be run in javascript, really.
-		ExecuteChar("if (all & all.constructor === Function) all; else echo('makejs: *** function all not found in makefile.js!\\\n')", "init");
+		ExecuteChar("if (all && all.constructor === Function) all(); else echo('makejs: *** function all not found in makefile.js!\\\n')", "init");
 	}
-	for (int i=1; i<argc; i++){ // TODO: Assign flags to javascript.
-		const char* str = argv[i];
-		v8::HandleScope handle_scope;
-		char *argu;
-		argu = new char[32];
-		sprintf(argu, "%s();", str);
-		ExecuteChar(argu, "unnamed");
+	
+	if (globalObj->Get(v8::String::NewSymbol("onfinish"))->IsFunction()){
+		CALL_METHOD(globalObj, "onfinish", globalObj, 0, flagsArguments);
 	}
-	ExecuteChar("if (typeof onfinish === 'function') onfinish();", "finish");
 	return 0;
 }
 
