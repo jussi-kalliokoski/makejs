@@ -127,10 +127,6 @@ int RunMain(int argc, char* argv[]){
 		}
 	}
 
-	if (argc < 2){ // TODO: This doesn't need to be run in javascript, really.
-		ExecuteChar("if (all && all.constructor === Function) all(); else echo('makejs: *** function all not found in makefile.js!\\\n')", "init");
-	}
-	
 	if (globalObj->Get(v8::String::NewSymbol("onfinish"))->IsFunction()){
 		CALL_METHOD(globalObj, "onfinish", globalObj, 0, flagsArguments);
 	}
