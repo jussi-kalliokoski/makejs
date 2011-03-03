@@ -131,10 +131,16 @@ int RunMain(int argc, char* argv[]){
 		return 1;
 	}
 
+	v8::TryCatch try_catch;
+
 	for (int i=0; i<ruleCount; i++){
 		v8::String::Utf8Value rule(rules->Get(v8::Number::New(i)));
 		if (globalObj->Get(v8::String::NewSymbol(*rule))->IsFunction()){
 			CALL_METHOD(globalObj, *rule, globalObj, 0, flagsArguments);
+			if (try_catch.HasCaught()){
+				ReportException(&try_catch);
+				return 1;
+			}
 		} else {
 			printf("makejs: *** Rule %s not specified in the makefile. Stop.\n", *rule);
 			return 1;
@@ -143,13 +149,17 @@ int RunMain(int argc, char* argv[]){
 
 	if (globalObj->Get(v8::String::NewSymbol("onfinish"))->IsFunction()){
 		CALL_METHOD(globalObj, "onfinish", globalObj, 0, flagsArguments);
+		if (try_catch.HasCaught()){
+			ReportException(&try_catch);
+			return 1;
+		}
 	}
 
 	gettimeofday(&endTime, NULL);
 	double stTime = startTime.tv_sec + (startTime.tv_usec / 1000000.0);
 	double enTime = endTime.tv_sec + (endTime.tv_usec / 1000000.0);
 
-	printf("makejs: finished in %.21f seconds\n", enTime - stTime);
+	printf("makejs: finished succesfully in %.21f seconds\n", enTime - stTime);
 
 	return 0;
 }
