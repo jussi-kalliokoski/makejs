@@ -235,9 +235,9 @@ v8::Handle<v8::Value> FileProperties(const v8::Arguments& args){
 	}
 	v8::Handle<v8::Object> fileData = v8::Object::New();
 	SET_VALUE(fileData, "mode", fileInfo.st_mode, Number);
-	SET_VALUE(fileData, "lastAccess", fileInfo.st_atime * 1000, Number);
-	SET_VALUE(fileData, "lastModified", fileInfo.st_mtime * 1000, Number);
-	SET_VALUE(fileData, "lastChanged", fileInfo.st_ctime * 1000, Number);
+	SET_VALUE(fileData, "lastAccess", fileInfo.st_atime, Number);
+	SET_VALUE(fileData, "lastModified", fileInfo.st_mtime, Number);
+	SET_VALUE(fileData, "lastChanged", fileInfo.st_ctime, Number);
 	SET_VALUE(fileData, "size", fileInfo.st_size, Number);
 	return fileData;
 }
