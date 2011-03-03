@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <sys/time.h>
 #include <iostream>
 #include <fstream>
 
@@ -62,6 +63,9 @@ int main(int argc, char* argv[]){
 }
 
 int RunMain(int argc, char* argv[]){
+	timeval startTime, endTime;
+	int timeSuccess = gettimeofday(&startTime, NULL);
+
 	v8::HandleScope handle_scope;
 	v8::Handle<v8::ObjectTemplate> global = v8::ObjectTemplate::New();
 
@@ -93,12 +97,13 @@ int RunMain(int argc, char* argv[]){
 	SET_OBJ(makejsObj, "rawFlags", rawFlags);
 	v8::Handle<v8::Object> argumentedFlags = v8::Object::New();
 	SET_OBJ(makejsObj, "argumentedFlags", argumentedFlags);
+	SET_VALUE(makejsObj, "started", (startTime.tv_sec * 1000000.0) + startTime.tv_usec, Number);
 
 	bool specifyingRules = true;
 	int ruleCount = 0;
 	int flagCount = 0;
 
-	for (int i=1; i<argc; i++){ // TODO: Assign flags to javascript.
+	for (int i=1; i<argc; i++){
 		const char* str = argv[i];
 		v8::HandleScope handle_scope;
 		rawFlags->Set(v8::Number::New(i-1), v8::String::New(str));
@@ -139,6 +144,13 @@ int RunMain(int argc, char* argv[]){
 	if (globalObj->Get(v8::String::NewSymbol("onfinish"))->IsFunction()){
 		CALL_METHOD(globalObj, "onfinish", globalObj, 0, flagsArguments);
 	}
+
+	gettimeofday(&endTime, NULL);
+	double stTime = startTime.tv_sec + (startTime.tv_usec / 1000000.0);
+	double enTime = endTime.tv_sec + (endTime.tv_usec / 1000000.0);
+
+	printf("makejs: finished in %.21f seconds\n", enTime - stTime);
+
 	return 0;
 }
 
@@ -319,24 +331,14 @@ void ReportException(v8::TryCatch* try_catch){
 	const char* exception_string = ToCString(exception);
 	v8::Handle<v8::Message> message = try_catch->Message();
 	if (message.IsEmpty()){
-		printf("%s\n", exception_string);
+		printf("makejs: *** %s. Stop.\n", exception_string);
 	} else {
 		v8::String::Utf8Value filename(message->GetScriptResourceName());
 		const char* filename_string = ToCString(filename);
 		int linenum = message->GetLineNumber();
-		printf("%s:%i: %s\n", filename_string, linenum, exception_string);
+		printf("makejs: *** %s on line %i: %s. Stop\n", filename_string, linenum, exception_string);
 		v8::String::Utf8Value sourceline(message->GetSourceLine());
 		const char* sourceline_string = ToCString(sourceline);
-		printf("%s\n", sourceline_string);
-		int start = message->GetStartColumn();
-		for (int i=0; i<start; i++){
-			printf(" ");
-		}
-		int end = message->GetEndColumn();
-		for (int i=start; i<end; i++){
-			printf("^");
-		}
-		printf("\n");
 		v8::String::Utf8Value stack_trace(try_catch->StackTrace());
 		if (stack_trace.length() > 0){
 			const char* stack_trace_string = ToCString(stack_trace);
