@@ -3,7 +3,6 @@
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <unistd.h>
 #include <sys/time.h>
 #include <iostream>
 #include <fstream>
@@ -223,17 +222,35 @@ v8::Handle<v8::Value> ShellEx(const v8::Arguments& args){
 	if (args.Length() < 1){
 		DIE("Bad parameters");
 	}
+	bool silent = false;
+	if (args.Length() == 2){
+		silent = args[1]->IsTrue();
+	}
 	v8::String::Utf8Value comm(args[0]);
 	if (*comm == NULL){
 		DIE("Error in shell command");
 	}
-	int res = system(*comm);
+	if (!silent){
+		printf("$ %s\n", *comm);
+	}
+
+	std::string data;
+	FILE *stream;
+	int MAX_BUFFER = 256;
+	char buffer[MAX_BUFFER];
+
+	stream = popen(*comm, "r");
+	while( fgets(buffer, MAX_BUFFER, stream) != NULL ){
+		data.append(buffer);
+	}
+	int res = pclose(stream);
+	
 	if (res != 0){
 		char *str = new char[32];
 		sprintf(str, "Shell exited with error code %i.", res);
 		DIE(str);
 	}
-	return v8::Number::New(res);
+	return v8::String::New(data.c_str());
 }
 
 v8::Handle<v8::Value> Load(const v8::Arguments& args){
