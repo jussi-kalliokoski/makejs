@@ -1,15 +1,11 @@
 import('conditional.js');
 
-//console.log(makejs.flags);
-
-function all()
-{
+function all(){
+	shell('cp strange/range hange pange');
+	console.log('This is not how it\'s supposed to work... :/');
 	echo('pro');
-	console.log(makejs.argumentedFlags['-h']);
-	console.log(makejs.argumentedFlags['-h'].length);
 }
 
-function onfinish()
-{
+function onfinish(){
 	echo('done');
 }

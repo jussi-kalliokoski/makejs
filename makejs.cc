@@ -56,9 +56,9 @@ DECLARE_FN(Quit);
 DECLARE_FN(ShellEx);
 
 int main(int argc, char* argv[]){
-	RunMain(argc, argv);
+	int escCode = RunMain(argc, argv);
 	v8::V8::Dispose();
-	return 0;
+	return escCode;
 }
 
 int RunMain(int argc, char* argv[]){
@@ -206,6 +206,11 @@ v8::Handle<v8::Value> ShellEx(const v8::Arguments& args){
 		DIE("Error in shell command");
 	}
 	int res = system(*comm);
+	if (res != 0){
+		char *str = new char[32];
+		sprintf(str, "Shell exited with error code %i.", res);
+		DIE(str);
+	}
 	return v8::Number::New(res);
 }
 
