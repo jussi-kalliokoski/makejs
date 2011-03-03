@@ -377,11 +377,6 @@ bool ExecuteString(v8::Handle<v8::String> source,
 			}
 			return false;
 		} else {
-			if (print_result && !result->IsUndefined()){
-				v8::String::Utf8Value str(result);
-				const char* cstr = ToCString(str);
-				printf("%s\n", cstr);
-			}
 			return true;
 		}
 	}

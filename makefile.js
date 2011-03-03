@@ -1,4 +1,5 @@
 import('conditional.js');
+import('lib/build.js');
 
 function _verbosePrint(obj, silent){
 	var out = '', i;
@@ -30,6 +31,9 @@ function _verbosePrint(obj, silent){
 }
 
 function all(){
+	if (all.isUpToDate()){
+		console.log('Up to date.');
+	}
 	var dir = shell('ls', true).split('\n');
 	dir.splice(dir.length - 1, 1);
 	_verbosePrint(fileProperties('makefile.js'));
@@ -44,3 +48,5 @@ function all(){
 function onfinish(){
 	echo('done');
 }
+
+Build.createBuild(all, ['bin'], ['makejs.cc']);
