@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/time.h>
+#include <sys/stat.h>
 #include <iostream>
 #include <fstream>
 
@@ -54,6 +55,7 @@ DECLARE_FN(Save);
 DECLARE_FN(Load);
 DECLARE_FN(Quit);
 DECLARE_FN(ShellEx);
+DECLARE_FN(FileProperties);
 
 int main(int argc, char* argv[]){
 	int escCode = RunMain(argc, argv);
@@ -85,6 +87,7 @@ int RunMain(int argc, char* argv[]){
 	SET_OBJ(consoleObj, "log", logFunction);
 	SET_OBJ(globalObj, "console", consoleObj);
 	SET_OBJ(globalObj, "makejs", makejsObj);
+	SET_METHOD(globalObj, "fileProperties", FileProperties);
 
 	v8::Handle<v8::Value>* flagsArguments;
 
@@ -216,6 +219,27 @@ v8::Handle<v8::Value> Save(const v8::Arguments& args){
 		DIE("Error loading file");
 	}
 	return SaveFile(*file, *content);
+}
+
+v8::Handle<v8::Value> FileProperties(const v8::Arguments& args){
+	if (args.Length() < 1){
+		DIE("Bad parameters");
+	}
+	struct stat fileInfo;
+	v8::String::Utf8Value file(args[0]);
+	if (*file == NULL){
+		DIE("Error loading file");
+	}
+	if (stat(*file, &fileInfo) != 0){
+		DIE("Error in \"stat\"");
+	}
+	v8::Handle<v8::Object> fileData = v8::Object::New();
+	SET_VALUE(fileData, "mode", fileInfo.st_mode, Number);
+	SET_VALUE(fileData, "lastAccess", fileInfo.st_atime, Number);
+	SET_VALUE(fileData, "lastModified", fileInfo.st_mtime, Number);
+	SET_VALUE(fileData, "lastChanged", fileInfo.st_ctime, Number);
+	SET_VALUE(fileData, "size", fileInfo.st_size, Number);
+	return fileData;
 }
 
 v8::Handle<v8::Value> ShellEx(const v8::Arguments& args){
