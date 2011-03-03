@@ -240,17 +240,28 @@ v8::Handle<v8::Value> ShellEx(const v8::Arguments& args){
 	char buffer[MAX_BUFFER];
 
 	stream = popen(*comm, "r");
-	while( fgets(buffer, MAX_BUFFER, stream) != NULL ){
-		data.append(buffer);
+	if (!stream){
+		DIE("Failed to open stream");
+	}
+	while(!feof(stream)){
+		if ( fgets(buffer, MAX_BUFFER, stream) != NULL ){
+			data.append(buffer);
+		}
 	}
 	int res = pclose(stream);
+
+	const char *datastr = data.c_str();
+
+	if (!silent){
+		printf("%s", datastr);
+	}
 	
 	if (res != 0){
 		char *str = new char[32];
-		sprintf(str, "Shell exited with error code %i.", res);
+		sprintf(str, "Shell exited with error code %i", res);
 		DIE(str);
 	}
-	return v8::String::New(data.c_str());
+	return v8::String::New(datastr);
 }
 
 v8::Handle<v8::Value> Load(const v8::Arguments& args){
